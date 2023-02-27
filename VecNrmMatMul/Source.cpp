@@ -95,6 +95,8 @@ namespace GLOBAL
 	Random random(Random::MakeSeed(0));
 	constexpr float ZEROF = 0.0f;
 	constexpr float ONEF = 1.0f;
+	constexpr float TWOF = 2.0f;
+	constexpr float NONEF = -1.0f;
 	
 	constexpr float LEARNING_RATE = 0.1f;
 	constexpr float HALF_LEARNING_RATE = LEARNING_RATE * 0.5f;
@@ -300,8 +302,8 @@ int main()
 	GLOBAL::random.Seed(0);
 	
 	uint32_t vecDim = 2;
-	uint32_t numInputVecs = 2;
-	uint32_t numTargetVecs = 2;
+	uint32_t numInputVecs = 1;
+	uint32_t numTargetVecs = 1;
 	float* inputVec;
 	float* targetVec;
 	float* productMatrix;
@@ -311,8 +313,15 @@ int main()
 	float* invSqrtProductMatrix;
 	float* dotProductMatrix;
 	
-	float* vecDerivitive;
-	float* targetVecDerivitive;
+	float* targetSimilairtyMatrix;
+	float* dotProductDerivitiveMatrix;
+	float* productDerivitiveMatrix;
+	float* inputVecDerivitiveMatrix;
+	float* targetVecDerivitiveMatrix;
+	float* invSqrtProductDerivitiveMatrix;
+	float* magProductDerivitiveMatrix;
+	float* squaredMagnitudeMatrix1Derivitive;
+	float* squaredMagnitudeMatrix2Derivitive;
 
 	inputVec = new float[vecDim * numInputVecs];
 	targetVec = new float[vecDim * numTargetVecs];
@@ -322,65 +331,160 @@ int main()
 	magProductMatrix = new float[numInputVecs * numTargetVecs];
 	invSqrtProductMatrix = new float[numInputVecs * numTargetVecs];
 	dotProductMatrix = new float[numInputVecs * numTargetVecs];
-	
-	vecDerivitive = new float[vecDim * numInputVecs];
-	targetVecDerivitive = new float[vecDim * numTargetVecs];
+
+	targetSimilairtyMatrix = new float[numInputVecs * numTargetVecs];
+	dotProductDerivitiveMatrix = new float[numInputVecs * numTargetVecs];
+	productDerivitiveMatrix = new float[numInputVecs * numTargetVecs];
+	inputVecDerivitiveMatrix = new float[vecDim * numInputVecs];
+	targetVecDerivitiveMatrix = new float[vecDim * numTargetVecs];
+	invSqrtProductDerivitiveMatrix = new float[numInputVecs * numTargetVecs];
+	magProductDerivitiveMatrix = new float[numInputVecs * numTargetVecs];
+	squaredMagnitudeMatrix1Derivitive = new float[numInputVecs];
+	squaredMagnitudeMatrix2Derivitive = new float[numTargetVecs];
 
 	cpuGenerateUniform(inputVec, vecDim * numInputVecs, -1, 1);
 	cpuGenerateUniform(targetVec, vecDim * numTargetVecs, -1, 1);
+	cpuGenerateUniform(targetSimilairtyMatrix, numInputVecs * numTargetVecs, -1, 1);
 	
-	cpuSgemmStridedBatched(
-		true, false,
-		numInputVecs, numTargetVecs, vecDim,
-		&GLOBAL::ONEF,
-		targetVec, vecDim, 0,
-		inputVec, vecDim, 0,
-		&GLOBAL::ZEROF,
-		productMatrix, numTargetVecs, 0,
-		1);
+	for (;;)
+	{
+		cpuSgemmStridedBatched(
+			true, false,
+			numInputVecs, numTargetVecs, vecDim,
+			&GLOBAL::ONEF,
+			targetVec, vecDim, 0,
+			inputVec, vecDim, 0,
+			&GLOBAL::ZEROF,
+			productMatrix, numTargetVecs, 0,
+			1);
 
-	cpuSgemmStridedBatched(
-		true, false,
-		1, 1, vecDim,
-		&GLOBAL::ONEF,
-		inputVec, vecDim, vecDim,
-		inputVec, vecDim, vecDim,
-		&GLOBAL::ZEROF,
-		squaredMagnitudeMatrix1, numInputVecs, 1,
-		numInputVecs);
+		cpuSgemmStridedBatched(
+			true, false,
+			1, 1, vecDim,
+			&GLOBAL::ONEF,
+			inputVec, vecDim, vecDim,
+			inputVec, vecDim, vecDim,
+			&GLOBAL::ZEROF,
+			squaredMagnitudeMatrix1, numInputVecs, 1,
+			numInputVecs);
 
-	cpuSgemmStridedBatched(
-		true, false,
-		1, 1, vecDim,
-		&GLOBAL::ONEF,
-		targetVec, vecDim, vecDim,
-		targetVec, vecDim, vecDim,
-		&GLOBAL::ZEROF,
-		squaredMagnitudeMatrix2, numTargetVecs, 1,
-		numTargetVecs);
+		cpuSgemmStridedBatched(
+			true, false,
+			1, 1, vecDim,
+			&GLOBAL::ONEF,
+			targetVec, vecDim, vecDim,
+			targetVec, vecDim, vecDim,
+			&GLOBAL::ZEROF,
+			squaredMagnitudeMatrix2, numTargetVecs, 1,
+			numTargetVecs);
 
-	cpuSgemmStridedBatched(
-		false, true,
-		numTargetVecs, numInputVecs, 1,
-		&GLOBAL::ONEF,
-		squaredMagnitudeMatrix2, 1, 0,
-		squaredMagnitudeMatrix1, 1, 0,
-		&GLOBAL::ZEROF,
-		magProductMatrix, numInputVecs, 0,
-		1);
+		cpuSgemmStridedBatched(
+			false, true,
+			numTargetVecs, numInputVecs, 1,
+			&GLOBAL::ONEF,
+			squaredMagnitudeMatrix2, 1, 0,
+			squaredMagnitudeMatrix1, 1, 0,
+			&GLOBAL::ZEROF,
+			magProductMatrix, numInputVecs, 0,
+			1);
 
-	cpuInvSqrt(magProductMatrix, invSqrtProductMatrix, numInputVecs * numTargetVecs);
+		cpuInvSqrt(magProductMatrix, invSqrtProductMatrix, numInputVecs * numTargetVecs);
 
-	cpuMultiply(productMatrix, invSqrtProductMatrix, dotProductMatrix, numInputVecs * numTargetVecs);
+		cpuMultiply(productMatrix, invSqrtProductMatrix, dotProductMatrix, numInputVecs * numTargetVecs);
+
+		memcpy(dotProductDerivitiveMatrix, targetSimilairtyMatrix, sizeof(float) * numInputVecs * numTargetVecs);
+		cpuSaxpy(numInputVecs * numTargetVecs, &GLOBAL::NONEF, dotProductMatrix, 1, dotProductDerivitiveMatrix, 1);
+
+		cpuMultiply(dotProductDerivitiveMatrix, invSqrtProductMatrix, productDerivitiveMatrix, numInputVecs * numTargetVecs);
+
+		cpuSgemmStridedBatched(
+			false, false,
+			vecDim, numInputVecs, numTargetVecs,
+			&GLOBAL::ONEF,
+			targetVec, vecDim, 0,
+			productDerivitiveMatrix, numTargetVecs, 0,
+			&GLOBAL::ZEROF,
+			inputVecDerivitiveMatrix, vecDim, 0,
+			1);
+
+		cpuSgemmStridedBatched(
+			false, true,
+			vecDim, numTargetVecs, numInputVecs,
+			&GLOBAL::ONEF,
+			inputVec, vecDim, 0,
+			productDerivitiveMatrix, numTargetVecs, 0,
+			&GLOBAL::ZEROF,
+			targetVecDerivitiveMatrix, vecDim, 0,
+			1);
+
+		cpuMultiply(dotProductDerivitiveMatrix, productMatrix, invSqrtProductDerivitiveMatrix, numInputVecs * numTargetVecs);
+
+		invSqrtDerivitive(invSqrtProductMatrix, invSqrtProductDerivitiveMatrix, magProductDerivitiveMatrix, numInputVecs * numTargetVecs);
+
+		cpuSgemmStridedBatched(
+			true, false,
+			numInputVecs, 1, numTargetVecs,
+			&GLOBAL::ONEF,
+			magProductDerivitiveMatrix, numTargetVecs, 0,
+			squaredMagnitudeMatrix2, numTargetVecs, 0,
+			&GLOBAL::ZEROF,
+			squaredMagnitudeMatrix1Derivitive, numInputVecs, 0,
+			1);
+
+		cpuSgemmStridedBatched(
+			false, false,
+			numTargetVecs, 1, numInputVecs,
+			&GLOBAL::ONEF,
+			magProductDerivitiveMatrix, numTargetVecs, 0,
+			squaredMagnitudeMatrix1, numInputVecs, 0,
+			&GLOBAL::ZEROF,
+			squaredMagnitudeMatrix2Derivitive, numTargetVecs, 0,
+			1);
+
+		cpuSgemmStridedBatched(
+			false, false,
+			vecDim, 1, 1,
+			&GLOBAL::TWOF,
+			inputVec, vecDim, vecDim,
+			squaredMagnitudeMatrix1Derivitive, numInputVecs, 1,
+			&GLOBAL::ONEF,
+			inputVecDerivitiveMatrix, vecDim, vecDim,
+			numInputVecs);
+
+		cpuSgemmStridedBatched(
+			false, false,
+			vecDim, 1, 1,
+			&GLOBAL::TWOF,
+			targetVec, vecDim, vecDim,
+			squaredMagnitudeMatrix2Derivitive, numTargetVecs, 1,
+			&GLOBAL::ONEF,
+			targetVecDerivitiveMatrix, vecDim, vecDim,
+			numTargetVecs);
+
+		cpuSaxpy(numInputVecs * vecDim, &GLOBAL::LEARNING_RATE, inputVecDerivitiveMatrix, 1, inputVec, 1);
+		cpuSaxpy(numTargetVecs * vecDim, &GLOBAL::LEARNING_RATE, targetVecDerivitiveMatrix, 1, targetVec, 1);
+
+		/*PrintMatrix(inputVec, numInputVecs, vecDim, "inputVec");
+		PrintMatrix(targetVec, numTargetVecs, vecDim, "targetVec");
+		PrintMatrix(productMatrix, numInputVecs, numTargetVecs, "productMatrix");
+		PrintMatrix(squaredMagnitudeMatrix1, 1, numInputVecs, "squaredMagnitudeMatrix1");
+		PrintMatrix(squaredMagnitudeMatrix2, 1, numTargetVecs, "squaredMagnitudeMatrix2");
+		PrintMatrix(magProductMatrix, numInputVecs, numTargetVecs, "magProductMatrix");
+		PrintMatrix(invSqrtProductMatrix, numInputVecs, numTargetVecs, "invSqrtProductMatrix");
+		PrintMatrix(dotProductMatrix, numInputVecs, numTargetVecs, "dotProductMatrix");
+		PrintMatrix(targetSimilairtyMatrix, numInputVecs, numTargetVecs, "targetSimilairtyMatrix");*/
+		PrintMatrix(dotProductDerivitiveMatrix, numInputVecs, numTargetVecs, "dotProductDerivitiveMatrix");
+		/*PrintMatrix(productDerivitiveMatrix, numInputVecs, numTargetVecs, "productDerivitiveMatrix");
+		PrintMatrix(inputVecDerivitiveMatrix, numInputVecs, vecDim, "inputVecDerivitiveMatrix");
+		PrintMatrix(targetVecDerivitiveMatrix, numTargetVecs, vecDim, "targetVecDerivitiveMatrix");
+		PrintMatrix(invSqrtProductDerivitiveMatrix, numInputVecs, numTargetVecs, "invSqrtProductDerivitiveMatrix");
+		PrintMatrix(magProductDerivitiveMatrix, numInputVecs, numTargetVecs, "magProductDerivitiveMatrix");
+		PrintMatrix(squaredMagnitudeMatrix1Derivitive, 1, numInputVecs, "squaredMagnitudeMatrix1Derivitive");
+		PrintMatrix(squaredMagnitudeMatrix2Derivitive, 1, numTargetVecs, "squaredMagnitudeMatrix2Derivitive");
+		PrintMatrix(inputVecDerivitiveMatrix, numInputVecs, vecDim, "inputVecDerivitiveMatrix");
+		PrintMatrix(targetVecDerivitiveMatrix, numTargetVecs, vecDim, "targetVecDerivitiveMatrix");*/
+	}
 	
-	PrintMatrix(inputVec, numInputVecs, vecDim, "inputVec");
-	PrintMatrix(targetVec, numTargetVecs, vecDim, "targetVec");
-	PrintMatrix(productMatrix, numInputVecs, numTargetVecs, "productMatrix");
-	PrintMatrix(squaredMagnitudeMatrix1, 1, numInputVecs, "squaredMagnitudeMatrix1");
-	PrintMatrix(squaredMagnitudeMatrix2, 1, numTargetVecs, "squaredMagnitudeMatrix2");
-	PrintMatrix(magProductMatrix, numInputVecs, numTargetVecs, "magProductMatrix");
-	PrintMatrix(invSqrtProductMatrix, numInputVecs, numTargetVecs, "invSqrtProductMatrix");
-	PrintMatrix(dotProductMatrix, numInputVecs, numTargetVecs, "dotProductMatrix");
 	/*
 	p_{ 11 } = v_{ 111 }\cdot v_{ 211 } + v_{ 112 }\cdot v_{ 212 }
 	p_{ 12 } = v_{ 111 }\cdot v_{ 221 } + v_{ 112 }\cdot v_{ 222 }
