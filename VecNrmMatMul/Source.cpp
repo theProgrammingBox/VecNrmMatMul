@@ -151,8 +151,7 @@ float invSqrt(float number)
 	float tmp = *(float*)&i;
 	return tmp * 0.703952253f * (2.38924456f - number * tmp * tmp);
 }
-
-float cpuNormDot(uint32_t size, float* vec1, float* vec2, float* vec1Gradient, float* vec2Gradient) {
+/*float cpuNormDot(uint32_t size, float* vec1, float* vec2, float* vec1Gradient, float* vec2Gradient) {
 	float sum1[1];
 	float sum2[1];
 	float dot[1];
@@ -196,73 +195,7 @@ float cpuNormDot(uint32_t size, float* vec1, float* vec2, float* vec1Gradient, f
 		vec2Gradient[j] = (vec1[j] * (*sum2 - vec2[j] * vec2[j]) + vec2[j] * (vec2[j] * vec1[j] - *dot)) * invMagsProduct;
 
 	return *dot * invMagsProduct;
-}
-
-class Visualizer : public olc::PixelGameEngine
-{
-public:
-	float orgin[2];
-	float vec[2];
-	float mouseVec[2];
-	float tempVec[2];
-	float savedVec[2];
-	float vecDerivitive[2];
-	float mouseVecDerivitive[2];
-	uint32_t rungeKuttaStep;
-	
-	Visualizer()
-	{
-		sAppName = "Visualizing Vector Norm Gradient";
-	}
-
-public:
-	bool OnUserCreate() override
-	{
-		orgin[0] = ScreenWidth() * 0.5f;
-		orgin[1] = ScreenHeight() * 0.5f;
-
-		vec[0] = 1000;
-		vec[1] = 0;
-
-		mouseVec[0] = -100;
-		mouseVec[1] = 0;
-
-		rungeKuttaStep = 0;
-		
-		return true;
-	}
-
-	bool OnUserUpdate(float fElapsedTime) override
-	{
-		if (GetMouse(0).bHeld)
-		{
-			mouseVec[0] = GetMouseX() - orgin[0];
-			mouseVec[1] = GetMouseY() - orgin[1];
-		}
-		
-		Clear(olc::BLACK);
-
-		DrawLine(orgin[0], orgin[1], orgin[0] + vec[0] * 0.1, orgin[1] + vec[1] * 0.1, olc::RED);
-		DrawLine(orgin[0], orgin[1], orgin[0] + mouseVec[0], orgin[1] + mouseVec[1], olc::GREEN);
-
-		if (rungeKuttaStep == 0)
-			memcpy(savedVec, vec, sizeof(float) * 2);
-		memcpy(tempVec, savedVec, sizeof(float) * 2);
-		//printf("vecDerivitive: %f, %f\n", vecDerivitive[0], vecDerivitive[1]);
-		if (rungeKuttaStep != 0)
-			cpuSaxpy(2, &GLOBAL::applied[rungeKuttaStep], vecDerivitive, 1, tempVec, 1);
-		
-		cpuNormDot(2, tempVec, mouseVec, vecDerivitive, mouseVecDerivitive);
-		
-		cpuSaxpy(2, &GLOBAL::summed[rungeKuttaStep], vecDerivitive, 1, vec, 1);
-		rungeKuttaStep *= ++rungeKuttaStep != 4;
-		
-		float vecMag = sqrt(vec[0] * vec[0] + vec[1] * vec[1]);
-		DrawString(10, 10, "vec magnitude: " + std::to_string(vecMag), olc::WHITE, 1);
-
-		return true;
-	}
-};
+}*/
 
 void PrintMatrix(float* arr, uint32_t rows, uint32_t cols, const char* label) {
 	printf("%s:\n", label);
@@ -293,14 +226,9 @@ void cpuMultiply(float* input, float* input2, float* output, uint32_t size)
 		output[i] = input[i] * input2[i];
 }
 
-int main()
+class Visualizer : public olc::PixelGameEngine
 {
-	/*Visualizer visualizer;
-	if (visualizer.Construct(1600, 900, 1, 1))
-		visualizer.Start();*/
-
-	GLOBAL::random.Seed(0);
-	
+public:
 	uint32_t vecDim = 2;
 	uint32_t numInputVecs = 1;
 	uint32_t numTargetVecs = 1;
@@ -312,7 +240,7 @@ int main()
 	float* magProductMatrix;
 	float* invSqrtProductMatrix;
 	float* dotProductMatrix;
-	
+
 	float* targetSimilairtyMatrix;
 	float* dotProductDerivitiveMatrix;
 	float* productDerivitiveMatrix;
@@ -323,31 +251,57 @@ int main()
 	float* squaredMagnitudeMatrix1Derivitive;
 	float* squaredMagnitudeMatrix2Derivitive;
 
-	inputVec = new float[vecDim * numInputVecs];
-	targetVec = new float[vecDim * numTargetVecs];
-	productMatrix = new float[numInputVecs * numTargetVecs];
-	squaredMagnitudeMatrix1 = new float[numInputVecs];
-	squaredMagnitudeMatrix2 = new float[numTargetVecs];
-	magProductMatrix = new float[numInputVecs * numTargetVecs];
-	invSqrtProductMatrix = new float[numInputVecs * numTargetVecs];
-	dotProductMatrix = new float[numInputVecs * numTargetVecs];
-
-	targetSimilairtyMatrix = new float[numInputVecs * numTargetVecs];
-	dotProductDerivitiveMatrix = new float[numInputVecs * numTargetVecs];
-	productDerivitiveMatrix = new float[numInputVecs * numTargetVecs];
-	inputVecDerivitiveMatrix = new float[vecDim * numInputVecs];
-	targetVecDerivitiveMatrix = new float[vecDim * numTargetVecs];
-	invSqrtProductDerivitiveMatrix = new float[numInputVecs * numTargetVecs];
-	magProductDerivitiveMatrix = new float[numInputVecs * numTargetVecs];
-	squaredMagnitudeMatrix1Derivitive = new float[numInputVecs];
-	squaredMagnitudeMatrix2Derivitive = new float[numTargetVecs];
-
-	cpuGenerateUniform(inputVec, vecDim * numInputVecs, -1, 1);
-	cpuGenerateUniform(targetVec, vecDim * numTargetVecs, -1, 1);
-	cpuGenerateUniform(targetSimilairtyMatrix, numInputVecs * numTargetVecs, -1, 1);
+	float orgin[2];
 	
-	for (;;)
+	Visualizer()
 	{
+		sAppName = "Visualizing Vector Norm Gradient";
+	}
+
+public:
+	bool OnUserCreate() override
+	{
+		inputVec = new float[vecDim * numInputVecs];
+		targetVec = new float[vecDim * numTargetVecs];
+		productMatrix = new float[numInputVecs * numTargetVecs];
+		squaredMagnitudeMatrix1 = new float[numInputVecs];
+		squaredMagnitudeMatrix2 = new float[numTargetVecs];
+		magProductMatrix = new float[numInputVecs * numTargetVecs];
+		invSqrtProductMatrix = new float[numInputVecs * numTargetVecs];
+		dotProductMatrix = new float[numInputVecs * numTargetVecs];
+
+		targetSimilairtyMatrix = new float[numInputVecs * numTargetVecs];
+		dotProductDerivitiveMatrix = new float[numInputVecs * numTargetVecs];
+		productDerivitiveMatrix = new float[numInputVecs * numTargetVecs];
+		inputVecDerivitiveMatrix = new float[vecDim * numInputVecs];
+		targetVecDerivitiveMatrix = new float[vecDim * numTargetVecs];
+		invSqrtProductDerivitiveMatrix = new float[numInputVecs * numTargetVecs];
+		magProductDerivitiveMatrix = new float[numInputVecs * numTargetVecs];
+		squaredMagnitudeMatrix1Derivitive = new float[numInputVecs];
+		squaredMagnitudeMatrix2Derivitive = new float[numTargetVecs];
+
+		cpuGenerateUniform(inputVec, vecDim * numInputVecs, -1, 1);
+		cpuGenerateUniform(targetVec, vecDim * numTargetVecs, -1, 1);
+		cpuGenerateUniform(targetSimilairtyMatrix, numInputVecs * numTargetVecs, -1, 1);
+
+		orgin[0] = ScreenWidth() * 0.5f;
+		orgin[1] = ScreenHeight() * 0.5f;
+		
+		return true;
+	}
+
+	bool OnUserUpdate(float fElapsedTime) override
+	{
+		if (GetMouse(0).bHeld)
+		{
+			targetVec[0] = GetMouseX() - orgin[0];
+			targetVec[1] = GetMouseY() - orgin[1];
+		}
+		
+		Clear(olc::BLACK);
+		DrawLine(orgin[0], orgin[1], orgin[0] + targetVec[0], orgin[1] + targetVec[1], olc::RED);
+		DrawLine(orgin[0], orgin[1], orgin[0] + inputVec[0] * 100.0f, orgin[1] + inputVec[1] * 100.0f, olc::GREEN);
+		
 		cpuSgemmStridedBatched(
 			true, false,
 			numInputVecs, numTargetVecs, vecDim,
@@ -472,9 +426,9 @@ int main()
 		PrintMatrix(magProductMatrix, numInputVecs, numTargetVecs, "magProductMatrix");
 		PrintMatrix(invSqrtProductMatrix, numInputVecs, numTargetVecs, "invSqrtProductMatrix");
 		PrintMatrix(dotProductMatrix, numInputVecs, numTargetVecs, "dotProductMatrix");
-		PrintMatrix(targetSimilairtyMatrix, numInputVecs, numTargetVecs, "targetSimilairtyMatrix");*/
+		PrintMatrix(targetSimilairtyMatrix, numInputVecs, numTargetVecs, "targetSimilairtyMatrix");
 		PrintMatrix(dotProductDerivitiveMatrix, numInputVecs, numTargetVecs, "dotProductDerivitiveMatrix");
-		/*PrintMatrix(productDerivitiveMatrix, numInputVecs, numTargetVecs, "productDerivitiveMatrix");
+		PrintMatrix(productDerivitiveMatrix, numInputVecs, numTargetVecs, "productDerivitiveMatrix");
 		PrintMatrix(inputVecDerivitiveMatrix, numInputVecs, vecDim, "inputVecDerivitiveMatrix");
 		PrintMatrix(targetVecDerivitiveMatrix, numTargetVecs, vecDim, "targetVecDerivitiveMatrix");
 		PrintMatrix(invSqrtProductDerivitiveMatrix, numInputVecs, numTargetVecs, "invSqrtProductDerivitiveMatrix");
@@ -483,7 +437,16 @@ int main()
 		PrintMatrix(squaredMagnitudeMatrix2Derivitive, 1, numTargetVecs, "squaredMagnitudeMatrix2Derivitive");
 		PrintMatrix(inputVecDerivitiveMatrix, numInputVecs, vecDim, "inputVecDerivitiveMatrix");
 		PrintMatrix(targetVecDerivitiveMatrix, numTargetVecs, vecDim, "targetVecDerivitiveMatrix");*/
+
+		return true;
 	}
+};
+
+int main()
+{
+	Visualizer visualizer;
+	if (visualizer.Construct(1600, 900, 1, 1))
+		visualizer.Start();
 	
 	/*
 	p_{ 11 } = v_{ 111 }\cdot v_{ 211 } + v_{ 112 }\cdot v_{ 212 }
