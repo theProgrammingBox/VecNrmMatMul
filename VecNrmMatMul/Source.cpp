@@ -236,10 +236,8 @@ public:
 		squaredMagnitudeMatrix2Derivitive = new float[numTargetVecs];
 
 		cpuGenerateUniform(inputVec, vecDim * numInputVecs, -1, 1);
+		cpuGenerateUniform(targetVec, vecDim * numTargetVecs, -1, 1);
 		cpuGenerateUniform(targetSimilairtyMatrix, numInputVecs * numTargetVecs, -1, 1);
-
-		targetVec[0] = 100.0f;
-		targetVec[1] = 0.0f;
 
 		orgin[0] = ScreenWidth() * 0.5f;
 		orgin[1] = ScreenHeight() * 0.5f;
@@ -251,12 +249,12 @@ public:
 	{
 		if (GetMouse(0).bHeld)
 		{
-			targetVec[0] = GetMouseX() - orgin[0];
-			targetVec[1] = GetMouseY() - orgin[1];
+			targetVec[0] = (GetMouseX() - orgin[0]) * 0.01f;
+			targetVec[1] = (GetMouseY() - orgin[1]) * 0.01f;
 		}
 		
 		Clear(olc::BLACK);
-		DrawLine(orgin[0], orgin[1], orgin[0] + targetVec[0] * 1.0f, orgin[1] + targetVec[1] * 1.0f, olc::RED);
+		DrawLine(orgin[0], orgin[1], orgin[0] + targetVec[0] * 100.0f, orgin[1] + targetVec[1] * 100.0f, olc::RED);
 		DrawLine(orgin[0], orgin[1], orgin[0] + inputVec[0] * 100.0f, orgin[1] + inputVec[1] * 100.0f, olc::GREEN);
 		
 		cpuSgemmStridedBatched(
