@@ -185,8 +185,8 @@ class Visualizer : public olc::PixelGameEngine
 {
 public:
 	uint32_t vecDim = 2;
-	uint32_t numInputVecs = 1;
-	uint32_t numTargetVecs = 1;
+	uint32_t numInputVecs = 2;
+	uint32_t numTargetVecs = 2;
 	float* inputVec;
 	float* targetVec;
 	float* productMatrix;
@@ -254,8 +254,10 @@ public:
 		}
 		
 		Clear(olc::BLACK);
-		DrawLine(orgin[0], orgin[1], orgin[0] + targetVec[0] * 100.0f, orgin[1] + targetVec[1] * 100.0f, olc::RED);
-		DrawLine(orgin[0], orgin[1], orgin[0] + inputVec[0] * 100.0f, orgin[1] + inputVec[1] * 100.0f, olc::GREEN);
+		for (uint32_t i = numTargetVecs; i--;)
+			DrawLine(orgin[0], orgin[1], orgin[0] + targetVec[i * vecDim] * 100.0f, orgin[1] + targetVec[i * vecDim + 1] * 100.0f, olc::RED);
+		for (uint32_t i = numInputVecs; i--;)
+			DrawLine(orgin[0], orgin[1], orgin[0] + inputVec[i * vecDim] * 100.0f, orgin[1] + inputVec[i * vecDim + 1] * 100.0f, olc::GREEN);
 		
 		cpuSgemmStridedBatched(
 			true, false,
