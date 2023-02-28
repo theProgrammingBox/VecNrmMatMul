@@ -8,11 +8,11 @@ using std::chrono::microseconds;
 
 /*
 IMPORTANT LESSONS
-1. With Euler, the length of the vector increases very noticeably.
-2. With Runge Kutta 4, the length of the vector remains a lot more stable
-3. For a learning rate of 0.1, the length of the vector increases by about 0.0001 per frame with runge kutta 4
-4. If the initial vector length is very small, with the same learning rate, the length of the vector remains incredibly stable
-5. Error is larger when the initial vector length is large
+1. 
+
+TODO
+1. Fix the error when numInput != numTargets
+2. see if I can make the derivitives uniform not according to their size
 */
 
 class Random
