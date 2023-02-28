@@ -98,7 +98,7 @@ namespace GLOBAL
 	constexpr float TWOF = 2.0f;
 	constexpr float NONEF = -1.0f;
 	
-	constexpr float LEARNING_RATE = 0.1f;
+	constexpr float LEARNING_RATE = 0.01f;
 	constexpr float HALF_LEARNING_RATE = LEARNING_RATE * 0.5f;
 	constexpr float THIRD_LEARNING_RATE = LEARNING_RATE * 0.33333333333333333333333333333333f;
 	constexpr float SIXTH_LEARNING_RATE = LEARNING_RATE * 0.16666666666666666666666666666667f;
@@ -151,51 +151,6 @@ float invSqrt(float number)
 	float tmp = *(float*)&i;
 	return tmp * 0.703952253f * (2.38924456f - number * tmp * tmp);
 }
-/*float cpuNormDot(uint32_t size, float* vec1, float* vec2, float* vec1Gradient, float* vec2Gradient) {
-	float sum1[1];
-	float sum2[1];
-	float dot[1];
-
-	cpuSgemmStridedBatched(
-		false, false,
-		1, 1, size,
-		&GLOBAL::ONEF,
-		vec1, 1, 0,
-		vec1, size, 0,
-		&GLOBAL::ZEROF,
-		sum1, 1, 0,
-		1);
-
-	cpuSgemmStridedBatched(
-		false, false,
-		1, 1, size,
-		&GLOBAL::ONEF,
-		vec2, 1, 0,
-		vec2, size, 0,
-		&GLOBAL::ZEROF,
-		sum2, 1, 0,
-		1);
-
-	cpuSgemmStridedBatched(
-		false, false,
-		1, 1, size,
-		&GLOBAL::ONEF,
-		vec1, 1, 0,
-		vec2, size, 0,
-		&GLOBAL::ZEROF,
-		dot, 1, 0,
-		1);
-	
-	float invMagsProduct = invSqrt(*sum1 * *sum2);
-	
-	for (uint32_t j = size; j--;)
-		vec1Gradient[j] = (vec2[j] * (*sum1 - vec1[j] * vec1[j]) + vec1[j] * (vec1[j] * vec2[j] - *dot)) * invMagsProduct;
-	
-	for (uint32_t j = size; j--;)
-		vec2Gradient[j] = (vec1[j] * (*sum2 - vec2[j] * vec2[j]) + vec2[j] * (vec2[j] * vec1[j] - *dot)) * invMagsProduct;
-
-	return *dot * invMagsProduct;
-}*/
 
 void PrintMatrix(float* arr, uint32_t rows, uint32_t cols, const char* label) {
 	printf("%s:\n", label);
@@ -281,8 +236,10 @@ public:
 		squaredMagnitudeMatrix2Derivitive = new float[numTargetVecs];
 
 		cpuGenerateUniform(inputVec, vecDim * numInputVecs, -1, 1);
-		cpuGenerateUniform(targetVec, vecDim * numTargetVecs, -1, 1);
 		cpuGenerateUniform(targetSimilairtyMatrix, numInputVecs * numTargetVecs, -1, 1);
+
+		targetVec[0] = 100.0f;
+		targetVec[1] = 0.0f;
 
 		orgin[0] = ScreenWidth() * 0.5f;
 		orgin[1] = ScreenHeight() * 0.5f;
@@ -294,13 +251,13 @@ public:
 	{
 		if (GetMouse(0).bHeld)
 		{
-			targetVec[0] = GetMouseX() - orgin[0];
-			targetVec[1] = GetMouseY() - orgin[1];
+			inputVec[0] = GetMouseX() - orgin[0];
+			inputVec[1] = GetMouseY() - orgin[1];
 		}
 		
 		Clear(olc::BLACK);
-		DrawLine(orgin[0], orgin[1], orgin[0] + targetVec[0], orgin[1] + targetVec[1], olc::RED);
-		DrawLine(orgin[0], orgin[1], orgin[0] + inputVec[0] * 100.0f, orgin[1] + inputVec[1] * 100.0f, olc::GREEN);
+		DrawLine(orgin[0], orgin[1], orgin[0] + targetVec[0] * 1.0f, orgin[1] + targetVec[1] * 1.0f, olc::RED);
+		DrawLine(orgin[0], orgin[1], orgin[0] + inputVec[0] * 1.0f, orgin[1] + inputVec[1] * 1.0f, olc::GREEN);
 		
 		cpuSgemmStridedBatched(
 			true, false,
