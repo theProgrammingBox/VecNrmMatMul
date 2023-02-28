@@ -185,8 +185,8 @@ class Visualizer : public olc::PixelGameEngine
 {
 public:
 	uint32_t vecDim = 2;
-	uint32_t numInputVecs = 2;
-	uint32_t numTargetVecs = 2;
+	uint32_t numInputVecs = 5;
+	uint32_t numTargetVecs = 5;
 	float* inputVec;
 	float* targetVec;
 	float* productMatrix;
