@@ -251,13 +251,13 @@ public:
 	{
 		if (GetMouse(0).bHeld)
 		{
-			inputVec[0] = GetMouseX() - orgin[0];
-			inputVec[1] = GetMouseY() - orgin[1];
+			targetVec[0] = GetMouseX() - orgin[0];
+			targetVec[1] = GetMouseY() - orgin[1];
 		}
 		
 		Clear(olc::BLACK);
 		DrawLine(orgin[0], orgin[1], orgin[0] + targetVec[0] * 1.0f, orgin[1] + targetVec[1] * 1.0f, olc::RED);
-		DrawLine(orgin[0], orgin[1], orgin[0] + inputVec[0] * 1.0f, orgin[1] + inputVec[1] * 1.0f, olc::GREEN);
+		DrawLine(orgin[0], orgin[1], orgin[0] + inputVec[0] * 100.0f, orgin[1] + inputVec[1] * 100.0f, olc::GREEN);
 		
 		cpuSgemmStridedBatched(
 			true, false,
@@ -331,7 +331,7 @@ public:
 		cpuMultiply(dotProductDerivitiveMatrix, productMatrix, invSqrtProductDerivitiveMatrix, numInputVecs * numTargetVecs);
 
 		invSqrtDerivitive(invSqrtProductMatrix, invSqrtProductDerivitiveMatrix, magProductDerivitiveMatrix, numInputVecs * numTargetVecs);
-
+		
 		cpuSgemmStridedBatched(
 			true, false,
 			numInputVecs, 1, numTargetVecs,
@@ -351,7 +351,7 @@ public:
 			&GLOBAL::ZEROF,
 			squaredMagnitudeMatrix2Derivitive, numTargetVecs, 0,
 			1);
-
+		
 		cpuSgemmStridedBatched(
 			false, false,
 			vecDim, 1, 1,
@@ -375,26 +375,29 @@ public:
 		cpuSaxpy(numInputVecs * vecDim, &GLOBAL::LEARNING_RATE, inputVecDerivitiveMatrix, 1, inputVec, 1);
 		cpuSaxpy(numTargetVecs * vecDim, &GLOBAL::LEARNING_RATE, targetVecDerivitiveMatrix, 1, targetVec, 1);
 
-		/*PrintMatrix(inputVec, numInputVecs, vecDim, "inputVec");
-		PrintMatrix(targetVec, numTargetVecs, vecDim, "targetVec");
-		PrintMatrix(productMatrix, numInputVecs, numTargetVecs, "productMatrix");
-		PrintMatrix(squaredMagnitudeMatrix1, 1, numInputVecs, "squaredMagnitudeMatrix1");
-		PrintMatrix(squaredMagnitudeMatrix2, 1, numTargetVecs, "squaredMagnitudeMatrix2");
-		PrintMatrix(magProductMatrix, numInputVecs, numTargetVecs, "magProductMatrix");
-		PrintMatrix(invSqrtProductMatrix, numInputVecs, numTargetVecs, "invSqrtProductMatrix");
-		PrintMatrix(dotProductMatrix, numInputVecs, numTargetVecs, "dotProductMatrix");
-		PrintMatrix(targetSimilairtyMatrix, numInputVecs, numTargetVecs, "targetSimilairtyMatrix");
-		PrintMatrix(dotProductDerivitiveMatrix, numInputVecs, numTargetVecs, "dotProductDerivitiveMatrix");
-		PrintMatrix(productDerivitiveMatrix, numInputVecs, numTargetVecs, "productDerivitiveMatrix");
-		PrintMatrix(inputVecDerivitiveMatrix, numInputVecs, vecDim, "inputVecDerivitiveMatrix");
-		PrintMatrix(targetVecDerivitiveMatrix, numTargetVecs, vecDim, "targetVecDerivitiveMatrix");
-		PrintMatrix(invSqrtProductDerivitiveMatrix, numInputVecs, numTargetVecs, "invSqrtProductDerivitiveMatrix");
-		PrintMatrix(magProductDerivitiveMatrix, numInputVecs, numTargetVecs, "magProductDerivitiveMatrix");
-		PrintMatrix(squaredMagnitudeMatrix1Derivitive, 1, numInputVecs, "squaredMagnitudeMatrix1Derivitive");
-		PrintMatrix(squaredMagnitudeMatrix2Derivitive, 1, numTargetVecs, "squaredMagnitudeMatrix2Derivitive");
-		PrintMatrix(inputVecDerivitiveMatrix, numInputVecs, vecDim, "inputVecDerivitiveMatrix");
-		PrintMatrix(targetVecDerivitiveMatrix, numTargetVecs, vecDim, "targetVecDerivitiveMatrix");*/
-
+		if (GetKey(olc::Key::SPACE).bPressed)
+		{
+			/*PrintMatrix(inputVec, numInputVecs, vecDim, "inputVec");
+			PrintMatrix(targetVec, numTargetVecs, vecDim, "targetVec");
+			PrintMatrix(productMatrix, numInputVecs, numTargetVecs, "productMatrix");*/
+			PrintMatrix(squaredMagnitudeMatrix1, 1, numInputVecs, "squaredMagnitudeMatrix1");
+			PrintMatrix(squaredMagnitudeMatrix2, 1, numTargetVecs, "squaredMagnitudeMatrix2");
+			/*PrintMatrix(magProductMatrix, numInputVecs, numTargetVecs, "magProductMatrix");
+			PrintMatrix(invSqrtProductMatrix, numInputVecs, numTargetVecs, "invSqrtProductMatrix");
+			PrintMatrix(dotProductMatrix, numInputVecs, numTargetVecs, "dotProductMatrix");
+			PrintMatrix(targetSimilairtyMatrix, numInputVecs, numTargetVecs, "targetSimilairtyMatrix");
+			PrintMatrix(dotProductDerivitiveMatrix, numInputVecs, numTargetVecs, "dotProductDerivitiveMatrix");
+			PrintMatrix(productDerivitiveMatrix, numInputVecs, numTargetVecs, "productDerivitiveMatrix");
+			PrintMatrix(inputVecDerivitiveMatrix, numInputVecs, vecDim, "inputVecDerivitiveMatrix");
+			PrintMatrix(targetVecDerivitiveMatrix, numTargetVecs, vecDim, "targetVecDerivitiveMatrix");
+			PrintMatrix(invSqrtProductDerivitiveMatrix, numInputVecs, numTargetVecs, "invSqrtProductDerivitiveMatrix");*/
+			PrintMatrix(magProductDerivitiveMatrix, numInputVecs, numTargetVecs, "magProductDerivitiveMatrix");
+			/*PrintMatrix(squaredMagnitudeMatrix1Derivitive, 1, numInputVecs, "squaredMagnitudeMatrix1Derivitive");
+			PrintMatrix(squaredMagnitudeMatrix2Derivitive, 1, numTargetVecs, "squaredMagnitudeMatrix2Derivitive");
+			PrintMatrix(inputVecDerivitiveMatrix, numInputVecs, vecDim, "inputVecDerivitiveMatrix");
+			PrintMatrix(targetVecDerivitiveMatrix, numTargetVecs, vecDim, "targetVecDerivitiveMatrix");*/
+		}
+		
 		return true;
 	}
 };
